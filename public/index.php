@@ -12,7 +12,7 @@ require_once dirname(__DIR__) . '/vendor/autoload.php';
 header('X-Frame-Options: DENY');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
-header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'");
+header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'");
 
 if (php_sapi_name() === 'cli-server') {
     $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
@@ -52,6 +52,10 @@ $router->post('/logout', [AuthController::class, 'logout']);
 $router->get('/dashboard', [DashboardController::class, 'index']);
 $router->get('/session-demo', [DashboardController::class, 'sessionDemo']);
 $router->get('/audit-log', [DashboardController::class, 'auditLog']);
+$router->get('/leads/export', [LeadController::class, 'export']);
+$router->get('/leads/stats',  [LeadController::class, 'stats']);
+$router->post('/leads/delete', [LeadController::class, 'destroy']);
+$router->post('/leads/status', [LeadController::class, 'updateStatus']);
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';

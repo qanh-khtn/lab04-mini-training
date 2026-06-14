@@ -4,3 +4,5 @@ Thumbs.db
 *.log
 *.pdf
 /storage/remember_tokens.json
+screenshots/
+report_lab04.tex

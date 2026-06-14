@@ -28,7 +28,6 @@ $flashTypeMap = [
             <?php if (($_SESSION['user_role'] ?? '') === 'admin'): ?>
                 <a class="<?= $currentPath === '/audit-log' ? 'active' : '' ?>" href="/audit-log">Nhật ký bảo mật</a>
             <?php endif; ?>
-            <span class="link-btn"><?= h($_SESSION['user_name'] ?? 'User') ?></span>
             <form class="inline-form" method="POST" action="/logout">
                 <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                 <button class="link-btn" type="submit">Đăng xuất</button>

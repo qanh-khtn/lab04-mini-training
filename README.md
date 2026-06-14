@@ -1,59 +1,78 @@
 # Mini Training Center Lead Portal
 
-Dự án PHP thuần cho Lab04: form đăng ký tư vấn khóa học, lưu lead vào JSON, đăng nhập admin/staff để xem danh sách và audit log.
+Ứng dụng PHP thuần cho **Lab04** — cổng nhận lead tư vấn khóa học, triển khai đầy đủ bảo mật form/session theo yêu cầu môn học.
 
-## Chạy dự án
+## Khởi động
 
 ```bash
 composer dump-autoload
 php -S localhost:8000 -t public
 ```
 
-Mở `http://localhost:8000`.
+Mở trình duyệt tại `http://localhost:8000`.
 
 ## Tài khoản demo
 
-| Email | Mật khẩu | Role |
-| --- | --- | --- |
-| `admin@center.edu.vn` | `Admin@123` | `admin` |
-| `staff@center.edu.vn` | `Staff@123` | `staff` |
+| Role | Email | Mật khẩu |
+|------|-------|----------|
+| Admin | `admin@center.edu.vn` | `Admin@1234` |
+| Staff | `staff@center.edu.vn` | `Staff@1234` |
 
-Mật khẩu trong code được lưu bằng `password_hash(PASSWORD_DEFAULT)` và xác thực bằng `password_verify()`.
+Mật khẩu lưu bằng `password_hash(PASSWORD_BCRYPT, cost=12)`, xác thực bằng `password_verify()`.
 
-## Routes chính
+## Routes
 
-| Method | Path | Mục đích |
-| --- | --- | --- |
+| Method | URL | Mô tả |
+|--------|-----|-------|
 | GET | `/` | Trang chủ |
 | GET | `/leads/create` | Form đăng ký tư vấn |
-| POST | `/leads` | Validate, chống spam, lưu lead, PRG redirect |
-| GET | `/leads` | Hiển thị lead cho người đã đăng nhập |
+| POST | `/leads` | Validate + anti-spam + lưu JSON + PRG redirect |
+| GET | `/leads` | Danh sách lead (yêu cầu đăng nhập) |
 | GET | `/login` | Form đăng nhập |
 | POST | `/login` | Xử lý đăng nhập |
-| POST | `/logout` | Đăng xuất có CSRF |
-| GET | `/dashboard` | Dashboard bắt buộc đăng nhập |
-| GET | `/session-demo` | Demo session bắt buộc đăng nhập |
-| GET | `/audit-log` | Audit log, chỉ admin |
+| POST | `/logout` | Đăng xuất (có CSRF) |
+| GET | `/dashboard` | Bảng điều khiển (yêu cầu đăng nhập) |
+| GET | `/session-demo` | Thông tin session debug |
+| GET | `/audit-log` | Nhật ký bảo mật (chỉ admin) |
+| * | URL không tồn tại | 404 Not Found |
+| * | Sai method | 405 Method Not Allowed |
 
-## Điểm bảo mật đã có
+## Cấu trúc thư mục
 
-- Session cookie: `PORTAL_SESSID`, `HttpOnly`, `SameSite=Lax`, `Secure` khi HTTPS.
-- HTTP security headers và CSP trong `public/index.php`.
-- CSRF token cho mọi form POST.
-- Server-side validation đầy đủ cho form lead.
-- Honeypot `website` ẩn bằng CSS `display:none !important`.
-- Rate limit submit lead 5 giây bằng session.
-- Flash message dùng PRG pattern.
-- Idle timeout 15 phút qua `check_session_timeout()`.
-- Logout chỉ dùng POST, có CSRF, clear remember token và regenerate session id.
-- Remember Me dùng rotating token, lưu SHA-256 trong `storage/remember_tokens.json`.
-- Audit log các event bảo mật vào `storage/audit.log`.
-- 404/405 render HTML qua view.
+```
+lab04-mini-training/
+├── app/
+│   ├── Controllers/        # HomeController, LeadController, AuthController, DashboardController
+│   ├── Core/Router.php     # Front Controller router (404/405)
+│   └── Support/            # Response, helpers.php
+├── public/
+│   ├── index.php           # Front Controller, session config, route registration
+│   └── assets/             # style.css, app.js
+├── views/
+│   ├── layout.php
+│   ├── home.php
+│   ├── leads/              # create.php, index.php
+│   ├── auth/login.php
+│   ├── dashboard.php
+│   ├── audit_log.php
+│   └── errors/             # 404.php, 405.php
+├── storage/                # leads.json, audit.log (tự tạo khi chạy)
+└── vendor/
+```
 
-## Storage
+## Tính năng bảo mật
 
-- `storage/leads.json`: dữ liệu lead.
-- `storage/audit.log`: audit log.
-- `storage/remember_tokens.json`: remember-me token đã hash.
-
-Thư mục `storage/` được tạo tự động khi app cần ghi file.
+| Tính năng | Chi tiết |
+|-----------|---------|
+| Session cookie | `PORTAL_SESSID`, `HttpOnly`, `SameSite=Lax`, `Secure` khi HTTPS |
+| Security headers | `X-Frame-Options`, `X-Content-Type-Options`, `CSP` |
+| CSRF | Token `bin2hex(random_bytes(32))`, verify bằng `hash_equals()`, trả 403 nếu sai |
+| Validation | required, email format, phone `/^0[0-9]{9}$/`, length, in-list |
+| Honeypot | Field `website` ẩn bằng CSS, block nếu có giá trị |
+| Rate limit | Không cho submit lead 2 lần trong 5 giây (session) |
+| PRG | Sau POST thành công redirect GET, tránh resubmit |
+| Flash message | Hiện đúng 1 lần sau redirect (toast tự ẩn sau 5 giây) |
+| Idle timeout | 15 phút không hoạt động → logout tự động |
+| Session context | Hash UA + IP, logout nếu context thay đổi |
+| Remember Me | Rotating SHA-256 token, 30 ngày, không lưu password |
+| Audit log | Ghi file `storage/audit.log` các event: LOGIN, LOGOUT, LEAD, HONEYPOT, RATE_LIMIT, TIMEOUT |

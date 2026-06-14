@@ -2,4 +2,5 @@
 .DS_Store
 Thumbs.db
 *.log
+*.pdf
 /storage/remember_tokens.json

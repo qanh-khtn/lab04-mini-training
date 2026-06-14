@@ -1,0 +1,5 @@
+/vendor/
+.DS_Store
+Thumbs.db
+*.log
+/storage/remember_tokens.json

@@ -1,0 +1,13 @@
+{
+    "name": "student/php-mini-training-center",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        },
+        "files": [
+            "app/Support/helpers.php"
+        ]
+    },
+    "require": {}
+}
